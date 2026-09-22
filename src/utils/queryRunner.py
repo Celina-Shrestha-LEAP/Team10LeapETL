@@ -1,7 +1,7 @@
 from db.source import get_source_connection
-def run_query(query):
+def run_query(query, last_watermark):
     with get_source_connection() as conn:
             with conn.cursor() as cur:
-                cur.execute(query)
+                cur.execute(query, (last_watermark,))
                 print(cur.fetchall())
                 return cur.fetchall()
