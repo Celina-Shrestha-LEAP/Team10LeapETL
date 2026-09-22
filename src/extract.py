@@ -16,6 +16,7 @@ def extractPrices(last_watermark):
     
 def extractTransactions(last_watermark):
     query = f""" SELECT * FROM transactions WHERE created_at > %s ORDER BY created_at, transaction_id"""   
+    print(query)
     return run_query(query, (last_watermark,))
     
 def extractHoldingsAndOrders(last_watermark):
@@ -26,4 +27,6 @@ def extractHoldingsAndOrders(last_watermark):
     return run_query(query, (last_watermark,))
     
 
-    
+if __name__ == "__main__":
+    extractTransactions(last_watermark= '1970-08-08')
+

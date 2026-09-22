@@ -170,3 +170,68 @@ def loadPrices(price_rows):
         conn.commit()
 
     return len(price_rows)
+
+def loadHoldings(rows):
+    if not rows:
+        return 0
+    quantity = rows[0]
+    ticker = rows[2]
+    client_id = rows[3]
+    
+
+    query = """
+        INSERT INTO holdings (
+            quanity,
+            ticker,
+            client_id
+        )
+        VALUES (%s, %s, %s)
+        ON CONFLICT (client_id, ticker)
+        DO UPDATE SET     
+            quantity = EXCLUDED.quantity
+    """
+
+    with get_target_connection() as conn:
+        with conn.cursor() as cur:
+            cur.executemany(query, quantity, ticker, client_id)
+
+        conn.commit()
+
+    return len(rows)
+
+def loadOrders(rows):
+    if not rows:
+        return 0
+    order_id = rows[1]
+    ticker = rows[2]
+    client_id = rows[3]
+    order_type = rows[4]
+    order_status = rows[5]
+    price = rows[6]
+    quantity = rows[7]
+    order_date = rows[8]
+
+    query = """
+        INSERT INTO orders (
+            order_id,
+            ticker,
+            client_id,
+            order_type,
+            order_status,
+            price,
+            quantity,
+            order_date
+        )
+        VALUES (%s, %s , %s, %s ,%s , %s, %s, %s)
+        ON CONFLICT (client_id, ticker)
+        DO UPDATE SET     
+            quantity = EXCLUDED.quantity
+    """
+
+    with get_target_connection() as conn:
+        with conn.cursor() as cur:
+            cur.executemany(query, order_id, ticker, client_id , order_type, order_status, price, quantity, order_date)
+
+        conn.commit()
+
+    return len(rows)
