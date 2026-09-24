@@ -3,20 +3,22 @@ from utils.queryRunner import run_query
 
 
 def extractClients(last_watermark):
-    query = f"""SELECT client_id, first_name, last_name, updated_at FROM clients WHERE updated_at > %s ORDER BY updated_at, client_id"""
+    query = f"""SELECT client_id, first_name, last_name, updated_at FROM clients WHERE updated_at > %s ORDER BY client_id"""
     return run_query(query, (last_watermark,))
     
 def extractEmployees(last_watermark):
-    query = f""" SELECT employee_id, first_name, last_name, role, updated_at FROM employees WHERE updated_at > %s ORDER BY updated_at, employee_id"""
+    query = f""" SELECT employee_id, first_name, last_name, role, updated_at FROM employees WHERE updated_at > %s ORDER BY employee_id"""
     return run_query(query, (last_watermark,))
     
 def extractPrices(last_watermark):
-    query = f""" SELECT * FROM prices WHERE recorded_at > %s ORDER BY recorded_at, price_id"""
+    query = f""" SELECT price_id, ticker, ask_price, ask_size, bid_price, bid_size, ask_exchange, bid_exchange, tape, recorded_at FROM prices WHERE recorded_at > %s ORDER BY recorded_at, price_id"""
     return run_query(query, (last_watermark,))
     
 def extractTransactions(last_watermark):
-    query = f""" SELECT * FROM transactions WHERE created_at > %s ORDER BY created_at, transaction_id"""   
-    print(query)
+    query = f""" SELECT transaction_id, client_id,
+                ttype,
+                amount,
+                created_at FROM transactions WHERE created_at > %s ORDER BY created_at, transaction_id"""   
     return run_query(query, (last_watermark,))
     
 def extractHoldingsAndOrders(last_watermark):

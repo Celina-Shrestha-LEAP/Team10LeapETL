@@ -1,32 +1,35 @@
-from src.db.target import get_target_connection
+from db.target import get_target_connection
+import pandas as pd
+from extract import extractHoldingsAndOrders
 
 
 def loadClients(client_rows):
     if not client_rows:
         return 0
+    
+    extracted_rows = [[row[0], row[1], row[2]] for row in client_rows]
+
 
     query = """
         INSERT INTO clients (
             client_id,
             first_name, 
-            last_name,
-            updated_at
+            last_name
         )
-        VALUES (%s, %s, %s, %s)
+        VALUES (%s, %s, %s)
         ON CONFLICT (client_id)
         DO UPDATE SET
             first_name = EXCLUDED.first_name,
-            last_name = EXCLUDED.last_name,
-            updated_at = EXCLUDED.updated_at
+            last_name = EXCLUDED.last_name
     """
 
     with get_target_connection() as conn:
         with conn.cursor() as cur:
-            cur.executemany(query, client_rows)
+            cur.executemany(query, extracted_rows)
 
         conn.commit()
 
-    return len(client_rows)
+    return len(extracted_rows)
 
 
 
@@ -34,61 +37,64 @@ def loadEmployees(employee_rows):
     if not employee_rows:
         return 0
 
+    extracted_rows = [[row[0], row[1], row[2], row[3]] for row in employee_rows]
+    
     query = """
         INSERT INTO employees (
             employee_id,
             first_name, 
             last_name,
-            updated_at
+            role
         )
         VALUES (%s, %s, %s, %s)
         ON CONFLICT (employee_id)
         DO UPDATE SET
             first_name = EXCLUDED.first_name,
             last_name = EXCLUDED.last_name,
-            updated_at = EXCLUDED.updated_at
+            role = EXCLUDED.role
     """
 
     with get_target_connection() as conn:
         with conn.cursor() as cur:
-            cur.executemany(query, employee_rows)
+            cur.executemany(query, extracted_rows)
 
         conn.commit()
 
-    return len(employee_rows)
+    return len(extracted_rows)
+
 
 
 def loadPrices(price_rows):
     if not price_rows:
         return 0
+    # Extract all 10 columns from the new query:
+    # price_id, ticker, askprice, asksize, bidprice, bidsize, askexchange, bidexchange, tapes, recorded_at
 
     query = """
         INSERT INTO prices (
             price_id,
             ticker, 
-            ask_price,
-            ask_size,
-            bid_price,
-            bid_size,
-            ask_exchange,
-            bid_exchange,
-            tape,
-            recorded_at,
-            quote_timestamp
+            askprice,
+            asksize,
+            bidprice,
+            bidsize,
+            askexchange,
+            bidexchange,
+            tapes,
+            recorded_at
         )
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         ON CONFLICT (price_id)
         DO UPDATE SET
             ticker = EXCLUDED.ticker,
-            ask_price = EXCLUDED.ask_price,
-            ask_size = EXCLUDED.ask_size,
-            bid_price = EXCLUDED.bid_price,
-            bid_size = EXCLUDED.bid_size,
-            ask_exchange = EXCLUDED.ask_exchange,
-            bid_exchange = EXCLUDED.bid_exchange,
-            tape = EXCLUDED.tape,
-            recorded_at = EXCLUDED.recorded_at,
-            quote_timestamp = EXCLUDED.quote_timestamp
+            askprice = EXCLUDED.askprice,
+            asksize = EXCLUDED.asksize,
+            bidprice = EXCLUDED.bidprice,
+            bidsize = EXCLUDED.bidsize,
+            askexchange = EXCLUDED.askexchange,
+            bidexchange = EXCLUDED.bidexchange,
+            tapes = EXCLUDED.tapes,
+            recorded_at = EXCLUDED.recorded_at
     """
 
     with get_target_connection() as conn:
@@ -104,13 +110,14 @@ def loadTransactions(transaction_rows):
     if not transaction_rows:
         return 0
 
+
     query = """
         INSERT INTO transactions (
             transaction_id,
             client_id,
-            created_at,
             ttype,
-            amount
+            amount,
+            created_at
         )
         VALUES (%s, %s, %s, %s, %s)
         ON CONFLICT (transaction_id)
@@ -130,58 +137,17 @@ def loadTransactions(transaction_rows):
     return len(transaction_rows)
 
 
-def loadPrices(price_rows):
-    if not price_rows:
-        return 0
-
-    query = """
-        INSERT INTO prices (
-            price_id,
-            ticker, 
-            ask_price,
-            ask_size,
-            bid_price,
-            bid_size,
-            ask_exchange,
-            bid_exchange,
-            tape,
-            recorded_at,
-            quote_timestamp
-        )
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-        ON CONFLICT (price_id)
-        DO UPDATE SET
-            ticker = EXCLUDED.ticker,
-            ask_price = EXCLUDED.ask_price,
-            ask_size = EXCLUDED.ask_size,
-            bid_price = EXCLUDED.bid_price,
-            bid_size = EXCLUDED.bid_size,
-            ask_exchange = EXCLUDED.ask_exchange,
-            bid_exchange = EXCLUDED.bid_exchange,
-            tape = EXCLUDED.tape,
-            recorded_at = EXCLUDED.recorded_at,
-            quote_timestamp = EXCLUDED.quote_timestamp
-    """
-
-    with get_target_connection() as conn:
-        with conn.cursor() as cur:
-            cur.executemany(query, price_rows)
-
-        conn.commit()
-
-    return len(price_rows)
 
 def loadHoldings(rows):
     if not rows:
         return 0
-    quantity = rows[0]
-    ticker = rows[2]
-    client_id = rows[3]
     
-
+    # Extract columns at indexes 0, 2, 3 from each row
+    extracted_rows = [[row[0], row[2], row[3]] for row in rows]
+    
     query = """
         INSERT INTO holdings (
-            quanity,
+            quantity,
             ticker,
             client_id
         )
@@ -193,23 +159,18 @@ def loadHoldings(rows):
 
     with get_target_connection() as conn:
         with conn.cursor() as cur:
-            cur.executemany(query, quantity, ticker, client_id)
+            cur.executemany(query, extracted_rows)
 
         conn.commit()
 
-    return len(rows)
+    return len(extracted_rows)
 
 def loadOrders(rows):
     if not rows:
         return 0
-    order_id = rows[1]
-    ticker = rows[2]
-    client_id = rows[3]
-    order_type = rows[4]
-    order_status = rows[5]
-    price = rows[6]
-    quantity = rows[7]
-    order_date = rows[8]
+    
+    # Extract columns from each row: order_id, ticker, client_id, order_type, order_status, price, quantity, order_date
+    extracted_rows = [[row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8]] for row in rows]
 
     query = """
         INSERT INTO orders (
@@ -223,15 +184,23 @@ def loadOrders(rows):
             order_date
         )
         VALUES (%s, %s , %s, %s ,%s , %s, %s, %s)
-        ON CONFLICT (client_id, ticker)
+        ON CONFLICT (order_id)
         DO UPDATE SET     
-            quantity = EXCLUDED.quantity
+            ticker = EXCLUDED.ticker,
+            client_id = EXCLUDED.client_id,
+            order_type = EXCLUDED.order_type,
+            order_status = EXCLUDED.order_status,
+            price = EXCLUDED.price,
+            quantity = EXCLUDED.quantity,
+            order_date = EXCLUDED.order_date
     """
 
     with get_target_connection() as conn:
         with conn.cursor() as cur:
-            cur.executemany(query, order_id, ticker, client_id , order_type, order_status, price, quantity, order_date)
+            cur.executemany(query, extracted_rows)
 
         conn.commit()
 
-    return len(rows)
+    return len(extracted_rows)
+
+
