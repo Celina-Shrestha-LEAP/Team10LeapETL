@@ -3,5 +3,4 @@ def run_query(query, last_watermark):
     with get_source_connection() as conn:
             with conn.cursor() as cur:
                 cur.execute(query, (last_watermark,))
-                print(cur.fetchall())
                 return cur.fetchall()

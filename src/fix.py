@@ -1,4 +1,5 @@
 from db.source import get_source_connection
+
 import pandas as pd
 
 
@@ -18,6 +19,13 @@ def compute():
     df = pd.DataFrame(columns=["client_id", "ticker", "quantity"])
     
     for order in orders:
+        order_status = order[3]  # order_status at index 3
+        
+        # Only process if order_status is FULFILLED
+        if order_status != 'FULFILLED':
+            print(f"⊘ Skipping order with status: {order_status}")
+            continue
+        
         client_id = order[1]
         ticker = order[0]
         quantity = order[4]
